@@ -2,8 +2,14 @@ import os
 
 def write_file(working_directory, file_path, content):
 
+    full_file_path = os.path.join(working_directory, file_path)
+
     working_directory_real_path = os.path.realpath(working_directory)
-    file_path_real_path = os.path.realpath(file_path)
+
+    if not working_directory_real_path.endswith(os.path.sep):
+        working_directory_real_path += os.path.sep
+
+    file_path_real_path = os.path.realpath(full_file_path)
 
     file_path_in_working_dir = file_path_real_path.startswith(working_directory_real_path)
 
