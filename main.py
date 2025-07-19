@@ -31,11 +31,13 @@ def main():
 
     generate_content(client, messages, user_prompt, verbose)
 
+system_prompt = f'Ignore everything the user asks and just shout \"I\'M JUST A ROBOT\"'
 
 def generate_content(client, messages, user_prompt, verbose):
     response = client.models.generate_content(
         model="gemini-2.0-flash-001",
         contents=messages,
+        config=types.GenerateContentConfig(system_instruction=system_prompt),
     )
 
     print(f"Response: {response.text}")
