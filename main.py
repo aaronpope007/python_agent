@@ -7,7 +7,7 @@ from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.run_python_file import schema_run_python_file
 from functions.write_file import schema_write_file
-
+from functions.call_function import call_function
 
 def main():
     load_dotenv()
@@ -68,9 +68,24 @@ def generate_content(client, messages, user_prompt, verbose):
 
     if response.function_calls:
         for function_call_part in response.function_calls:
-            print(f"Calling function: {function_call_part.name}({function_call_part.args})")
-    else:
-        print(f"Response: {response.text}")
+            if verbose:
+                print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+            else:
+                print(f" - Calling function: {function_call_part.name}")
+
+            function_call_result = call_function(function_call_part, verbose)
+            if (
+                hasattr(function_call_result, "parts")
+                and function_call_result.parts
+                and hasattr(function_call_result.parts[0], "function_response")
+            ):
+                result_dict = getattr(function_call_result.parts[0].function_response, 'response', None)
+                if result_dict is None:
+                    raise Exception("No function response found in returned Content")
+                if verbose:
+                    print(f"-> {result_dict}")
+            else:
+                raise Exception("function_call_result.parts[0].function_response not found!")
 
     if verbose == True:
         print(f"User prompt: {user_prompt}")
