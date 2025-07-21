@@ -58,39 +58,35 @@ available_functions = types.Tool(
 )
 
 def generate_content(client, messages, user_prompt, verbose):
-    response = client.models.generate_content(
-        model="gemini-2.0-flash-001",
-        contents=messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions], system_instruction=system_prompt
-        ),
-    )
+    for i in range(20):  # max 20 iterations
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-001",
+            contents=messages,
+            config=types.GenerateContentConfig(
+                tools=[available_functions], system_instruction=system_prompt
+            ),
+        )
 
-    if response.function_calls:
-        for function_call_part in response.function_calls:
-            if verbose:
-                print(f"Calling function: {function_call_part.name}({function_call_part.args})")
-            else:
-                print(f" - Calling function: {function_call_part.name}")
+        # Add the model's response to messages
+        for candidate in response.candidates:
+            messages.append(candidate.content)
 
-            function_call_result = call_function(function_call_part, verbose)
-            if (
-                hasattr(function_call_result, "parts")
-                and function_call_result.parts
-                and hasattr(function_call_result.parts[0], "function_response")
-            ):
-                result_dict = getattr(function_call_result.parts[0].function_response, 'response', None)
-                if result_dict is None:
-                    raise Exception("No function response found in returned Content")
+        # Check if there are function calls to handle
+        if response.function_calls:
+            # Handle function calls (your existing code)
+            for function_call_part in response.function_calls:
                 if verbose:
-                    print(f"-> {result_dict}")
-            else:
-                raise Exception("function_call_result.parts[0].function_response not found!")
+                    print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+                else:
+                    print(f" - Calling function: {function_call_part.name}")
 
-    if verbose == True:
-        print(f"User prompt: {user_prompt}")
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+                function_call_result = call_function(function_call_part, verbose)
+                messages.append(function_call_result)
+        else:
+            # No function calls means we're done!
+            print("Final response:")
+            print(response.text)
+            break
 
 
 
